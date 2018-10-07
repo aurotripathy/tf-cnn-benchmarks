@@ -33,6 +33,7 @@ from models import trivial_model
 from models import vgg_model
 from models.experimental import deepspeech
 from models.experimental import official_ncf_model
+from models import p1b3net_model
 
 
 _model_name_to_imagenet_model = {
@@ -104,39 +105,46 @@ _model_name_to_cifar_model = {
 }
 
 
+_model_name_to_mnist_model = {
+    'p1b3net': p1b3net_model.P1B3Model,
+}
+
+
 _model_name_to_object_detection_model = {
     'ssd300': ssd_model.SSD300Model
 }
 
 
 def _get_model_map(dataset_name):
-  """Get name to model map for specified dataset."""
-  if dataset_name == 'cifar10':
-    return _model_name_to_cifar_model
-  elif dataset_name in ('imagenet', 'synthetic'):
-    return _model_name_to_imagenet_model
-  elif dataset_name == 'librispeech':
-    return {'deepspeech2': deepspeech.DeepSpeech2Model}
-  elif dataset_name == 'coco':
-    return _model_name_to_object_detection_model
-  else:
-    raise ValueError('Invalid dataset name: %s' % dataset_name)
+    """Get name to model map for specified dataset."""
+    if dataset_name == 'cifar10':
+        return _model_name_to_cifar_model
+    elif dataset_name in ('imagenet', 'synthetic'):
+        return _model_name_to_imagenet_model
+    elif dataset_name == 'librispeech':
+        return {'deepspeech2': deepspeech.DeepSpeech2Model}
+    elif dataset_name == 'coco':
+        return _model_name_to_object_detection_model
+    elif dataset_name == 'mnist':
+        return _model_name_to_mnist_model
+    else:
+        raise ValueError('Invalid dataset name: %s' % dataset_name)
 
 
 def get_model_config(model_name, dataset, params):
-  """Map model name to model network configuration."""
-  model_map = _get_model_map(dataset.name)
-  if model_name not in model_map:
-    raise ValueError('Invalid model name \'%s\' for dataset \'%s\'' %
-                     (model_name, dataset.name))
-  else:
-    return model_map[model_name](params=params)
+    """Map model name to model network configuration."""
+    model_map = _get_model_map(dataset.name)
+    if model_name not in model_map:
+        raise ValueError('Invalid model name \'%s\' for dataset \'%s\'' %
+                         (model_name, dataset.name))
+    else:
+        return model_map[model_name](params=params)
 
 
 def register_model(model_name, dataset_name, model_func):
-  """Register a new model that can be obtained with `get_model_config`."""
-  model_map = _get_model_map(dataset_name)
-  if model_name in model_map:
-    raise ValueError('Model "%s" is already registered for dataset "%s"' %
-                     (model_name, dataset_name))
-  model_map[model_name] = model_func
+    """Register a new model that can be obtained with `get_model_config`."""
+    model_map = _get_model_map(dataset_name)
+    if model_name in model_map:
+        raise ValueError('Model "%s" is already registered for dataset "%s"' %
+                         (model_name, dataset_name))
+    model_map[model_name] = model_func
