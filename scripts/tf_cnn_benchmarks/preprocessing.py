@@ -32,7 +32,7 @@ from tensorflow.contrib.image.python.ops import distort_image_ops
 # from tensorflow.python.data.experimental.ops import prefetching_ops
 from tensorflow.contrib.data.python.ops import prefetching_ops
 # from tensorflow.python.data.ops import multi_device_iterator_ops
-from tensorflow.contrib.data.python.ops import multi_device_iterator_ops
+# from tensorflow.contrib.data.python.ops import multi_device_iterator_ops
 from tensorflow.python.framework import function
 from tensorflow.python.layers import utils
 from tensorflow.python.ops import data_flow_ops
@@ -1164,7 +1164,7 @@ class LibrispeechPreprocessor(InputPreprocessor):
         ]
 
 
-class MNISTImagePreprocessor(BaseImagePreprocessor):
+class MNISTPreprocessor(BaseImagePreprocessor):
     """Preprocessor for MNIST input images."""
 
     def _distort_image(self, image):
