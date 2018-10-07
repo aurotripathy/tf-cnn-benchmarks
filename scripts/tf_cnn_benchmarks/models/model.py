@@ -315,18 +315,18 @@ class MLPModel(Model):
     # params.
     def __init__(self,
                  model,
-                 image_size,
+                 feature_size,
                  batch_size,
                  learning_rate,
                  layer_counts=None,
                  fp16_loss_scale=128,
                  params=None):
-        super(MLP, self).__init__(
+        super(MLPModel, self).__init__(
             model, batch_size, learning_rate, fp16_loss_scale,
             params=params)
-        self.image_size = image_size
+        self.feature_size = feature_size
         self.layer_counts = layer_counts
-        self.depth = 3
+        self.depth = 1
         self.params = params
         self.data_format = params.data_format if params else 'NCHW'
 
@@ -368,19 +368,19 @@ class MLPModel(Model):
         raise NotImplementedError(
             self.getName() + ' does not have backbone model.')
 
-    def add_inference(self, cnn):
+    def add_inference(self, mlp):
         """Adds the core layers of the CNN's forward pass.
 
-        This should build the forward pass layers, except for the initial transpose
-        of the images and the final Dense layer producing the logits. The layers
+        This should build the forward pass layers, except for the final Dense 
+        layer producing the logits. The layers
         should be build with the ConvNetBuilder `cnn`, so that when this function
         returns, `cnn.top_layer` and `cnn.top_size` refer to the last layer and the
         number of units of the layer layer, respectively.
 
         Args:
-          cnn: A ConvNetBuilder to build the forward pass layers with.
+          mlp: A ConvNetBuilder to build the forward pass layers with.
         """
-        del cnn
+        del mlp
         raise NotImplementedError('Must be implemented in derived classes')
 
     def get_input_data_types(self):
@@ -390,14 +390,15 @@ class MLPModel(Model):
     def get_input_shapes(self):
         # Each input is of shape [batch_size, height, width, depth]
         # Each label is of shape [batch_size]
-        return [[self.batch_size, self.image_size, self.image_size, self.depth],
+        return [[self.batch_size, self.feature_size,
+                 self.feature_size, self.depth],
                 [self.batch_size]]
 
     def get_synthetic_inputs(self, input_name, nclass):
         # Synthetic input should be within [0, 255].
-        image_shape, label_shape = self.get_input_shapes()
+        feature_shape, label_shape = self.get_input_shapes()
         inputs = tf.truncated_normal(
-            image_shape,
+            feature_shape,
             dtype=self.data_type,
             mean=127,
             stddev=60,
@@ -414,26 +415,24 @@ class MLPModel(Model):
     def build_network(self,
                       inputs,
                       phase_train=True,
-                      nclass=1001):
-        """Returns logits from input images.
+                      nclass=10):
+        """Returns logits from input features.
 
         Args:
-          inputs: The input images and labels
+          inputs: The input feautre and labels
           phase_train: True during training. False during evaluation.
-          nclass: Number of classes that the images can belong to.
+          nclass: Number of classes that the features can belong to.
 
         Returns:
           A BuildNetworkResult which contains the logits and model-specific extra
             information.
         """
-        images = inputs[0]
-        if self.data_format == 'NCHW':
-            images = tf.transpose(images, [0, 3, 1, 2])
+        features = inputs[0]
         var_type = tf.float32
         if self.data_type == tf.float16 and self.fp16_vars:
             var_type = tf.float16
         network = convnet_builder.ConvNetBuilder(
-            images, self.depth, phase_train, self.use_tf_layers, self.data_format,
+            features, self.depth, phase_train, self.use_tf_layers, self.data_format,
             self.data_type, var_type)
         with tf.variable_scope('cg', custom_getter=network.get_custom_getter()):
             self.add_inference(network)
