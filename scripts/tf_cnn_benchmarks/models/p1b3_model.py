@@ -20,28 +20,20 @@ import tensorflow as tf
 from models import model
 
 
-class P1B3Model(model.CNNModel):
+class P1B3Model(model.MLPModel):
 
     def __init__(self, params=None):
         super(P1B3Model, self).__init__(
+            # model-name, feature-size, batch-size, learning-rate
             'p1b3net', 32, 128, 0.1, params=params)
 
     def add_inference(self, cnn):
-        cnn.conv(64, 5, 5, 1, 1, 'SAME', stddev=5e-2)
-        cnn.mpool(3, 3, 2, 2, mode='SAME')
-        cnn.lrn(depth_radius=4, bias=1.0, alpha=0.001 / 9.0, beta=0.75)
-        cnn.conv(64, 5, 5, 1, 1, 'SAME', bias=0.1, stddev=5e-2)
-        cnn.lrn(depth_radius=4, bias=1.0, alpha=0.001 / 9.0, beta=0.75)
-        cnn.mpool(3, 3, 2, 2, mode='SAME')
-        shape = cnn.top_layer.get_shape().as_list()
-        flat_dim = shape[1] * shape[2] * shape[3]
-        cnn.reshape([-1, flat_dim])
-        cnn.affine(384, stddev=0.04, bias=0.1)
-        cnn.affine(192, stddev=0.04, bias=0.1)
+        cnn.affine(100, stddev=0.04, bias=0.1)
+        cnn.affine(50, stddev=0.04, bias=0.1)
 
     def get_learning_rate(self, global_step, batch_size):
-        num_examples_per_epoch = 50000
-        num_epochs_per_decay = 100
+        num_examples_per_epoch = 50000  # ToDO
+        num_epochs_per_decay = 100  # ToDO
         decay_steps = int(
             num_epochs_per_decay * num_examples_per_epoch / batch_size)
         decay_factor = 0.1
