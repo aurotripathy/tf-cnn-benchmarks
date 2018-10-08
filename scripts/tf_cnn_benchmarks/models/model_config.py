@@ -102,6 +102,7 @@ _model_name_to_cifar_model = {
     'densenet100_k12': densenet_model.create_densenet100_k12_model,
     'densenet100_k24': densenet_model.create_densenet100_k24_model,
     'nasnet': nasnet_model.NasnetCifarModel,
+    'p1b3net': p1b3net_model.P1B3Model,
 }
 
 
