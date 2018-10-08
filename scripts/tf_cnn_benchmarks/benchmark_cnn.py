@@ -57,7 +57,7 @@ from tensorflow.python.framework import importer
 from tensorflow.python.ops import data_flow_ops
 from tensorflow.python.platform import gfile
 from tensorflow.python.util import nest
-
+from pudb import set_trace
 
 _DEFAULT_NUM_BATCHES = 100
 
@@ -2710,7 +2710,7 @@ class BenchmarkCNN(object):
             Returns:
               outputs: A list of tensors depending on different modes.
             """
-
+            # set_trace()
             build_network_result = self.model.build_network(
                 input_list, phase_train, nclass)
             logits = build_network_result.logits
