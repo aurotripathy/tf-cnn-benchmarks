@@ -211,9 +211,9 @@ class COCODataset(ImageDataset):
 class MNISTDataset(ImageDataset):
     """COnfiguration for MNIST dataset."""
 
-    def __init__(self, data_dir=None, feature_size=28*28):
+    def __init__(self, data_dir=None):
         super(MNISTDataset, self).__init__(
-            'mnist', feature_size, data_dir=data_dir, num_classes=10)
+            'mnist', 1, 784, data_dir=data_dir, num_classes=10)
 
     def num_examples_per_epoch(self, subset='train'):
         if subset == 'train':
