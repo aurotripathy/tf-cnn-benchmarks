@@ -107,6 +107,7 @@ _model_name_to_cifar_model = {
 
 
 _model_name_to_mnist_model = {
+    'trivial': trivial_model.TrivialCifar10Model,
     'p1b3net': p1b3net_model.P1B3Model,
 }
 
