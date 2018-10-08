@@ -20,7 +20,7 @@ import tensorflow as tf
 from models import model
 
 
-class P1B3Model(model.MLPModel):
+class P1B3Model(model.CNNModel):
 
     def __init__(self, params=None):
         super(P1B3Model, self).__init__(
@@ -28,6 +28,7 @@ class P1B3Model(model.MLPModel):
             'p1b3net', 32, 128, 0.1, params=params)
 
     def add_inference(self, cnn):
+        cnn.reshape([-1, 32 * 32])
         cnn.affine(100, stddev=0.04, bias=0.1)
         cnn.affine(50, stddev=0.04, bias=0.1)
 
