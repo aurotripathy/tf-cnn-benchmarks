@@ -1,0 +1,1 @@
+python tf_cnn_benchmarks.py --model=trivial --data_name=cifar10 --data_format=NHWC --data_dir=/home/auro/models/tutorials/image/cifar10_estimator/cifar-10-batches-py/ --num_epochs=10000 --num_gpus=3
