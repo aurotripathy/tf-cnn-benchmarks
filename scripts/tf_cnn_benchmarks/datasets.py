@@ -1,3 +1,5 @@
+
+
 # Copyright 2017 The TensorFlow Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -30,6 +32,8 @@ import tensorflow as tf
 
 from tensorflow.python.platform import gfile
 import preprocessing
+
+from pudb import set_trace
 
 IMAGENET_NUM_TRAIN_IMAGES = 1281167
 IMAGENET_NUM_VAL_IMAGES = 50000
@@ -209,11 +213,45 @@ class COCODataset(ImageDataset):
 
 
 class MNISTDataset(ImageDataset):
-    """COnfiguration for MNIST dataset."""
+    """Configuration for mnistdataset.
+
+    It will mount all the input images to memory.
+    """
 
     def __init__(self, data_dir=None):
         super(MNISTDataset, self).__init__(
-            'mnist', 1, 784, data_dir=data_dir, num_classes=10)
+            'mnist',
+            28,
+            28,
+            data_dir=data_dir,
+            queue_runner_required=True,
+            num_classes=10)
+
+    def read_data_files(self, subset='train'):
+        """Reads from data file and returns images and labels in a numpy array."""
+        assert self.data_dir, ('Cannot call `read_data_files` when using synthetic '
+                               'data')
+        import numpy as np
+
+        from tensorflow.examples.tutorials.mnist import input_data
+
+        mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
+
+        if subset == 'train':
+            X_train = np.vstack([img.reshape(-1,)
+                                 for img in mnist.train.images])
+            y_train = mnist.train.labels
+            print('MNIST X_train dim', X_train.shape)
+            print('MNIST y_train dim', y_train.shape)
+            return X_train, y_train
+        elif subset == 'validation':
+            X_test = np.vstack([img.reshape(-1,) for img in mnist.test.images])
+            y_test = mnist.test.labels
+            print('MNIST X_test dim', X_test.shape)
+            print('MNIST X_test dim', y_test.shape)
+            return X_test, y_test
+        else:
+            raise ValueError('Invalid data subset "%s"' % subset)
 
     def num_examples_per_epoch(self, subset='train'):
         if subset == 'train':
