@@ -13,6 +13,9 @@
 # limitations under the License.
 # ==============================================================================
 
+# https://github.com/tensorflow/tensorflow/blob/master/tensorflow/examples/how_tos/reading_data/convert_to_records.py
+# https://github.com/tensorflow/tensorflow/blob/master/tensorflow/examples/how_tos/reading_data/fully_connected_reader.py
+
 """Converts MNIST data to TFRecords file format with Example protos."""
 from __future__ import absolute_import
 from __future__ import division
