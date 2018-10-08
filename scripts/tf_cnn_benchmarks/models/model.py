@@ -20,6 +20,8 @@ import tensorflow as tf
 
 import convnet_builder
 
+from pudb import set_trace
+
 # BuildNetworkResult encapsulate the result (e.g. logits) of a
 # Model.build_network() call.
 BuildNetworkResult = namedtuple(
@@ -281,6 +283,7 @@ class CNNModel(Model):
         """Returns the op to measure the loss of the model."""
         logits = build_network_result.logits
         _, labels = inputs
+        # set_trace()
         # TODO(laigd): consider putting the aux logit in the Inception model,
         # which could call super.loss_function twice, once with the normal logits
         # and once with the aux logits.
@@ -306,170 +309,3 @@ class CNNModel(Model):
         top_5_op = tf.reduce_sum(
             tf.cast(tf.nn.in_top_k(logits, labels, 5), self.data_type))
         return {'top_1_accuracy': top_1_op, 'top_5_accuracy': top_5_op}
-
-
-class MLPModel(Model):
-    """Base model configuration for MLP benchmarks."""
-
-    # TODO(laigd): reduce the number of parameters and read everything from
-    # params.
-    def __init__(self,
-                 model,
-                 feature_size,
-                 batch_size,
-                 learning_rate,
-                 layer_counts=None,
-                 fp16_loss_scale=128,
-                 params=None):
-        super(MLPModel, self).__init__(
-            model, batch_size, learning_rate, fp16_loss_scale,
-            params=params)
-        self.feature_size = feature_size
-        self.layer_counts = layer_counts
-        self.depth = 1
-        self.params = params
-        self.data_format = params.data_format if params else 'NCHW'
-
-    def get_layer_counts(self):
-        return self.layer_counts
-
-    def skip_final_affine_layer(self):
-        """Returns if the caller of this class should skip the final affine layer.
-
-        Normally, this class adds a final affine layer to the model after calling
-        self.add_inference(), to generate the logits. If a subclass override this
-        method to return True, the caller should not add the final affine layer.
-
-        This is useful for tests.
-        """
-        return False
-
-    def add_backbone_saver(self):
-        """Creates a tf.train.Saver as self.backbone_saver for loading backbone.
-
-        A tf.train.Saver must be created and saved in self.backbone_saver before
-        calling load_backbone_model, with correct variable name mapping to load
-        variables from checkpoint correctly into the current model.
-        """
-        raise NotImplementedError(
-            self.getName() + ' does not have backbone model.')
-
-    def load_backbone_model(self, sess, backbone_model_path):
-        """Loads variable values from a pre-trained backbone model.
-
-        This should be used at the beginning of the training process for transfer
-        learning models using checkpoints of base models.
-
-        Args:
-          sess: session to train the model.
-          backbone_model_path: path to backbone model checkpoint file.
-        """
-        del sess, backbone_model_path
-        raise NotImplementedError(
-            self.getName() + ' does not have backbone model.')
-
-    def add_inference(self, mlp):
-        """Adds the core layers of the CNN's forward pass.
-
-        This should build the forward pass layers, except for the final Dense 
-        layer producing the logits. The layers
-        should be build with the ConvNetBuilder `cnn`, so that when this function
-        returns, `cnn.top_layer` and `cnn.top_size` refer to the last layer and the
-        number of units of the layer layer, respectively.
-
-        Args:
-          mlp: A ConvNetBuilder to build the forward pass layers with.
-        """
-        del mlp
-        raise NotImplementedError('Must be implemented in derived classes')
-
-    def get_input_data_types(self):
-        # Data type of input and label.
-        return [self.data_type, tf.int32]
-
-    def get_input_shapes(self):
-        # Each input is of shape [batch_size, height, width, depth]
-        # Each label is of shape [batch_size]
-        return [[self.batch_size, self.feature_size,
-                 self.feature_size, self.depth],
-                [self.batch_size]]
-
-    def get_synthetic_inputs(self, input_name, nclass):
-        # Synthetic input should be within [0, 255].
-        feature_shape, label_shape = self.get_input_shapes()
-        inputs = tf.truncated_normal(
-            feature_shape,
-            dtype=self.data_type,
-            mean=127,
-            stddev=60,
-            name=self.model_name + '_synthetic_inputs')
-        inputs = tf.contrib.framework.local_variable(inputs, name=input_name)
-        labels = tf.random_uniform(
-            label_shape,
-            minval=0,
-            maxval=nclass - 1,
-            dtype=tf.int32,
-            name=self.model_name + '_synthetic_labels')
-        return (inputs, labels)
-
-    def build_network(self,
-                      inputs,
-                      phase_train=True,
-                      nclass=10):
-        """Returns logits from input features.
-
-        Args:
-          inputs: The input feautre and labels
-          phase_train: True during training. False during evaluation.
-          nclass: Number of classes that the features can belong to.
-
-        Returns:
-          A BuildNetworkResult which contains the logits and model-specific extra
-            information.
-        """
-        features = inputs[0]
-        var_type = tf.float32
-        if self.data_type == tf.float16 and self.fp16_vars:
-            var_type = tf.float16
-        network = convnet_builder.ConvNetBuilder(
-            features, self.depth, phase_train, self.use_tf_layers, self.data_format,
-            self.data_type, var_type)
-        with tf.variable_scope('cg', custom_getter=network.get_custom_getter()):
-            self.add_inference(network)
-            # Add the final fully-connected class layer
-            logits = (
-                network.affine(nclass, activation='linear')
-                if not self.skip_final_affine_layer() else network.top_layer)
-            aux_logits = None
-            if network.aux_top_layer is not None:
-                with network.switch_to_aux_top_layer():
-                    aux_logits = network.affine(
-                        nclass, activation='linear', stddev=0.001)
-        if self.data_type == tf.float16:
-            # TODO(reedwm): Determine if we should do this cast here.
-            logits = tf.cast(logits, tf.float32)
-            if aux_logits is not None:
-                aux_logits = tf.cast(aux_logits, tf.float32)
-        return BuildNetworkResult(
-            logits=logits, extra_info=None if aux_logits is None else aux_logits)
-
-    def loss_function(self, inputs, build_network_result):
-        """Returns the op to measure the loss of the model."""
-        logits = build_network_result.logits
-        _, labels = inputs
-        # TODO(laigd): consider putting the aux logit in the Inception model,
-        # which could call super.loss_function twice, once with the normal logits
-        # and once with the aux logits.
-        aux_logits = build_network_result.extra_info
-        with tf.name_scope('xentropy'):
-            cross_entropy = tf.losses.sparse_softmax_cross_entropy(
-                logits=logits, labels=labels)
-            loss = tf.reduce_mean(cross_entropy, name='xentropy_mean')
-        if aux_logits is not None:
-            with tf.name_scope('aux_xentropy'):
-                aux_cross_entropy = tf.losses.sparse_softmax_cross_entropy(
-                    logits=aux_logits, labels=labels)
-                aux_loss = 0.4 * \
-                    tf.reduce_mean(aux_cross_entropy, name='aux_loss')
-                loss = tf.add_n([loss, aux_loss])
-        return loss
