@@ -42,3 +42,18 @@ class TrivialCifar10Model(model.CNNModel):
         cnn.affine(4096)
         cnn.affine(4096)
         cnn.affine(4096)
+
+
+class MNISTFullyConnectedModel(model.CNNModel):
+    """Trivial cifar10 model configuration."""
+
+    def __init__(self, params=None):
+        super(MNISTFullyConnectedModel, self).__init__(
+            # model_name, image_size, batch_size, lr
+            'mnist_fully_connected', 28, 50, 0.005, params=params)
+
+    def add_inference(self, cnn):
+        cnn.reshape([-1, 28 * 28])
+        cnn.affine(4096)
+        cnn.affine(4096)
+        cnn.affine(4096)
