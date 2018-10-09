@@ -1204,11 +1204,11 @@ class MNISTPreprocessor(BaseImagePreprocessor):
         """Preprocessing raw image."""
         if self.summary_verbosity >= 3:
             tf.summary.image('raw.image', tf.expand_dims(raw_image, 0))
-        if self.train and self.distortions:
-            image = self._distort_image(raw_image)
-        else:
-            image = self._eval_image(raw_image)
-        normalized = normalized_image(image)
+        # if self.train and self.distortions:
+        #     image = self._distort_image(raw_image)
+        # else:
+        #     image = self._eval_image(raw_image)
+        normalized = normalized_image(raw_image)
         return tf.cast(normalized, self.dtype)
 
     def minibatch(self,
