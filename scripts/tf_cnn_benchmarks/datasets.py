@@ -223,6 +223,7 @@ class MNISTDataset(ImageDataset):
             'mnist',
             28,
             28,
+            depth=1,
             data_dir=data_dir,
             queue_runner_required=True,
             num_classes=10)
@@ -235,18 +236,21 @@ class MNISTDataset(ImageDataset):
 
         from tensorflow.examples.tutorials.mnist import input_data
 
-        mnist = input_data.read_data_sets("MNIST_data/", one_hot=True)
+        mnist = input_data.read_data_sets("MNIST_data/", one_hot=False)
 
+        set_trace()
         if subset == 'train':
             X_train = np.vstack([img.reshape(-1,)
                                  for img in mnist.train.images])
             y_train = mnist.train.labels
+            X_train = X_train.reshape(X_train.shape[0], 28, 28)
             print('MNIST X_train dim', X_train.shape)
             print('MNIST y_train dim', y_train.shape)
             return X_train, y_train
         elif subset == 'validation':
             X_test = np.vstack([img.reshape(-1,) for img in mnist.test.images])
             y_test = mnist.test.labels
+            X_test = X_test.reshape(X_test.shape[0], 28, 28)
             print('MNIST X_test dim', X_test.shape)
             print('MNIST X_test dim', y_test.shape)
             return X_test, y_test
