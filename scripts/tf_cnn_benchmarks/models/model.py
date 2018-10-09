@@ -143,6 +143,7 @@ class CNNModel(Model):
                  image_size,
                  batch_size,
                  learning_rate,
+                 depth=3,
                  layer_counts=None,
                  fp16_loss_scale=128,
                  params=None):
@@ -151,7 +152,7 @@ class CNNModel(Model):
             params=params)
         self.image_size = image_size
         self.layer_counts = layer_counts
-        self.depth = 3
+        self.depth = depth
         self.params = params
         self.data_format = params.data_format if params else 'NCHW'
 
@@ -251,6 +252,7 @@ class CNNModel(Model):
           A BuildNetworkResult which contains the logits and model-specific extra
             information.
         """
+        set_trace()
         images = inputs[0]
         if self.data_format == 'NCHW':
             images = tf.transpose(images, [0, 3, 1, 2])
